@@ -1,3 +1,9 @@
+jansson (1.1-1~ppa1~karmic1) karmic; urgency=low
+
+  * New upstream release
+
+ -- Petri Lehtinen <petri@digip.org>  Tue, 20 Oct 2009 21:38:52 +0300
+
 jansson (1.0.4-1~ppa1~karmic1) karmic; urgency=low
 
   * New upstream release
