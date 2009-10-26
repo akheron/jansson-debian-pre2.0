@@ -2,8 +2,9 @@ Source: jansson
 Section: devel
 Priority: optional
 Maintainer: Petri Lehtinen <petri@digip.org>
-Build-Depends: cdbs (>= 0.4.49), debhelper (>= 5), python (>= 2.6)
+Build-Depends: cdbs (>= 0.4.49), debhelper (>= 5), python (>= 2.6), python-sphinx
 Standards-Version: 3.8.3
+Homepage: http://www.digip.org/jansson/
 
 Package: libjansson0
 Architecture: any
@@ -13,11 +14,14 @@ Description: C library for encoding, decoding and manipulating JSON data
  data. It features simple and intuitive API and data model,
  comprehensive documentation, no dependencies on other libraries, full
  unicode support (UTF-8) and an extensive test suite.
+ .
+ This package contains the shared library.
 
 Package: libjansson0-dev
 Section: libdevel
 Provides: libjansson-dev
 Conflicts: libjansson-dev
+Suggests: libjansson-doc
 Architecture: any
 Depends: ${misc:Depends}, libjansson0 (= ${binary:Version}), libc6-dev | libc-dev
 Description: C library for encoding, decoding and manipulating JSON data
@@ -25,3 +29,19 @@ Description: C library for encoding, decoding and manipulating JSON data
  data. It features simple and intuitive API and data model,
  comprehensive documentation, no dependencies on other libraries, full
  unicode support (UTF-8) and an extensive test suite.
+ .
+ This package contains the files needed to develop software that will
+ use Jansson.
+
+Package: libjansson-doc
+Section: doc
+Architecture: all
+Suggests: libjansson0 (= ${binary:Version})
+Depends: ${misc:Depends}
+Description: C library for encoding, decoding and manipulating JSON data
+ Jansson is a C library for encoding, decoding and manipulating JSON
+ data. It features simple and intuitive API and data model,
+ comprehensive documentation, no dependencies on other libraries, full
+ unicode support (UTF-8) and an extensive test suite.
+ .
+ This package contains documentation for Jansson.

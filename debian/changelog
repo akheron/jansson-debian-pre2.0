@@ -1,3 +1,12 @@
+jansson (1.1.1-1~ppa1~karmic1) karmic; urgency=low
+
+  * New upstream release
+  * Add doc package
+  * Enhance binary package descriptions
+  * Add Homepage control field
+
+ -- Petri Lehtinen <petri@digip.org>  Mon, 26 Oct 2009 21:49:51 +0200
+
 jansson (1.1-1~ppa1~karmic1) karmic; urgency=low
 
   * New upstream release

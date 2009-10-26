@@ -6,3 +6,13 @@ include /usr/share/cdbs/1/class/autotools.mk
 DEB_DH_INSTALL_SOURCEDIR = debian/tmp
 DEB_MAKE_CHECK_TARGET = check
 DEB_INSTALL_CHANGELOGS_ALL = CHANGES
+DEB_COMPRESS_EXCLUDE = html/
+
+build/libjansson-doc::
+	sphinx-build doc debian/html
+
+install/libjansson-doc::
+	rm -rf debian/html/.buildinfo debian/html/.doctrees
+
+clean::
+	rm -rf debian/html
