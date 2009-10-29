@@ -221,8 +221,8 @@ libjansson_la_SOURCES = \
 	util.h \
 	value.c
 
-libjansson_la_LDFLAGS = -version-info 0:4:0
-AM_CFLAGS = -Wall -Wextra -Werror -std=c99
+libjansson_la_LDFLAGS = -version-info 1:0:1
+AM_CFLAGS = -Wall -Wextra -Werror
 all: all-am
 
 .SUFFIXES:

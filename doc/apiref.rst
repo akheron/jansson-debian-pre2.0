@@ -1,3 +1,5 @@
+.. _apiref:
+
 *************
 API Reference
 *************
@@ -41,6 +43,12 @@ Objects of :ctype:`json_t` are always used through a pointer. There
 are APIs for querying the type, manipulating the reference count, and
 for constructing and manipulating values of different types.
 
+Unless noted otherwise, all API functions return an error value if an
+error occurs. Depending on the function's signature, the error value
+is either *NULL* or -1. Invalid arguments or invalid input are
+apparent sources for errors. Memory allocation and I/O operations may
+also cause errors.
+
 
 Type
 ----
@@ -80,8 +88,8 @@ functions:
 .. cfunction:: int json_typeof(const json_t *json)
 
    Return the type of the JSON value (a :ctype:`json_type` cast to
-   :ctype:`int`). This function is actually implemented as a macro for
-   speed.
+   :ctype:`int`). *json* MUST NOT be *NULL*. This function is actually
+   implemented as a macro for speed.
 
 .. cfunction:: json_is_object(const json_t *json)
                json_is_array(const json_t *json)
@@ -93,18 +101,21 @@ functions:
                json_is_null(const json_t *json)
 
    These functions (actually macros) return true (non-zero) for values
-   of the given type, and false (zero) for values of other types.
+   of the given type, and false (zero) for values of other types and
+   for *NULL*.
 
 .. cfunction:: json_is_number(const json_t *json)
 
    Returns true for values of types :const:`JSON_INTEGER` and
-   :const:`JSON_REAL`, and false for other types.
+   :const:`JSON_REAL`, and false for other types and for *NULL*.
 
 .. cfunction:: json_is_boolean(const json_t *json)
 
    Returns true for types :const:`JSON_TRUE` and :const:`JSON_FALSE`,
-   and false for values of other types.
+   and false for values of other types and for *NULL*.
 
+
+.. _apiref-reference-count:
 
 Reference Count
 ---------------
@@ -121,7 +132,8 @@ The following functions are used to manipulate the reference count.
 
 .. cfunction:: json_t *json_incref(json_t *json)
 
-   Increment the reference count of *json*.
+   Increment the reference count of *json* if it's not non-*NULL*.
+   Returns *json*.
 
 .. cfunction:: void json_decref(json_t *json)
 
@@ -151,29 +163,60 @@ will return a new or borrowed reference or steal a reference to its
 argument.
 
 
+Circular References
+-------------------
+
+A circular reference is created when an object or an array is,
+directly or indirectly, inserted inside itself. The direct case is
+simple::
+
+  json_t *obj = json_object();
+  json_object_set(obj, "foo", obj);
+
+Jansson will refuse to do this, and :cfunc:`json_object_set()` (and
+all the other such functions for objects and arrays) will return with
+an error status. The indirect case is the dangerous one::
+
+  json_t *arr1 = json_array(), *arr2 = json_array();
+  json_array_append(arr1, arr2);
+  json_array_append(arr2, arr1);
+
+In this example, the array ``arr2`` is contained in the array
+``arr1``, and vice versa. Jansson cannot check for this kind of
+indirect circular references without a performance hit, so it's up to
+the user to avoid them.
+
+If a circular reference is created, the memory consumed by the values
+cannot be freed by :cfunc:`json_decref()`. The reference counts never
+drops to zero because the values are keeping the circular reference to
+themselves. Moreover, trying to encode the values with any of the
+encoding functions will fail. The encoder detects circular references
+and returns an error status.
+
+
 True, False and Null
 ====================
+
+These values are implemented as singletons, so each of these functions
+returns the same value each time.
 
 .. cfunction:: json_t *json_true(void)
 
    .. refcounting:: new
 
-   Returns a value of the type :const:`JSON_TRUE`, or *NULL* on
-   error.
+   Returns the JSON true value.
 
 .. cfunction:: json_t *json_false(void)
 
    .. refcounting:: new
 
-   Returns a value of the type :const:`JSON_FALSE`, or *NULL* on
-   error.
+   Returns the JSON false value.
 
 .. cfunction:: json_t *json_null(void)
 
    .. refcounting:: new
 
-   Returns a value of the type :const:`JSON_NULL`, or *NULL* on
-   error.
+   Returns the JSON null value.
 
 
 String
@@ -183,13 +226,21 @@ String
 
    .. refcounting:: new
 
-   Returns a new value of the type :const:`JSON_STRING`, or *NULL* on
-   error. *value* must be a valid UTF-8 encoded Unicode string.
+   Returns a new JSON string, or *NULL* on error. *value* must be a
+   valid UTF-8 encoded Unicode string.
 
-.. cfunction:: const char *json_string_value(const json_t *json)
+.. cfunction:: const char *json_string_value(const json_t *string)
 
-   Returns the associated value of a :const:`JSON_STRING` value as a
-   null terminated UTF-8 encoded string.
+   Returns the associated value of *string* as a null terminated UTF-8
+   encoded string, or *NULL* if *string* is not a JSON string.
+
+.. cfunction:: int json_string_set(const json_t *string, const char *value)
+
+   Sets the associated value of *string* to *value*. *value* must be a
+   valid UTF-8 encoded Unicode string. Returns 0 on success and -1 on
+   error.
+
+   .. versionadded:: 1.1
 
 
 Number
@@ -199,33 +250,46 @@ Number
 
    .. refcounting:: new
 
-   Returns a new value of the type :const:`JSON_INTEGER`, or *NULL* on
-   error.
+   Returns a new JSON integer, or *NULL* on error.
 
-.. cfunction:: int json_integer_value(const json_t *json)
+.. cfunction:: int json_integer_value(const json_t *integer)
 
-   Returns the associated integer value of values of the type
-   :const:`JSON_INTEGER`, or 0 for values of other types.
+   Returns the associated value of *integer*, or 0 if *json* is not a
+   JSON integer.
+
+.. cfunction:: int json_integer_set(const json_t *integer, int value)
+
+   Sets the associated value of *integer* to *value*. Returns 0 on
+   success and -1 if *integer* is not a JSON integer.
+
+   .. versionadded:: 1.1
 
 .. cfunction:: json_t *json_real(double value)
 
    .. refcounting:: new
 
-   Returns a new value of the type :const:`JSON_REAL`, or *NULL* on
-   error.
+   Returns a new JSON real, or *NULL* on error.
 
-.. cfunction:: double json_real_value(const json_t *json)
+.. cfunction:: double json_real_value(const json_t *real)
 
-   Returns the associated real value of values of the type
-   :const:`JSON_INTEGER`, or 0 for values of other types.
+   Returns the associated value of *real*, or 0.0 if *real* is not a
+   JSON real.
+
+.. cfunction:: int json_real_set(const json_t *real, double value)
+
+   Sets the associated value of *real* to *value*. Returns 0 on
+   success and -1 if *real* is not a JSON real.
+
+   .. versionadded:: 1.1
 
 In addition to the functions above, there's a common query function
 for integers and reals:
 
 .. cfunction:: double json_number_value(const json_t *json)
 
-   Returns the value of either ``JSON_INTEGER`` or ``JSON_REAL``, cast
-   to double regardless of the actual type.
+   Returns the associated value of the JSON integer or JSON real
+   *json*, cast to double regardless of the actual type. If *json* is
+   neither JSON real nor JSON integer, 0.0 is returned.
 
 
 Array
@@ -237,32 +301,89 @@ A JSON array is an ordered collection of other JSON values.
 
    .. refcounting:: new
 
-   Returns a new value of the type :const:`JSON_ARRAY`, or *NULL* on
-   error. Initially, the array is empty.
+   Returns a new JSON array, or *NULL* on error. Initially, the array
+   is empty.
 
 .. cfunction:: unsigned int json_array_size(const json_t *array)
 
-   Returns the number of elements in *array*.
+   Returns the number of elements in *array*, or 0 if *array* is NULL
+   or not a JSON array.
 
 .. cfunction:: json_t *json_array_get(const json_t *array, unsigned int index)
 
    .. refcounting:: borrow
 
-   Returns the element in *array* at position *index*, or *NULL* if
-   *index* is out of range. The valid range for *index* is from 0 to
-   the return value of :cfunc:`json_array_size()` minus 1.
+   Returns the element in *array* at position *index*. The valid range
+   for *index* is from 0 to the return value of
+   :cfunc:`json_array_size()` minus 1. If *array* is not a JSON array,
+   if *array* is *NULL*, or if *index* is out of range, *NULL* is
+   returned.
 
 .. cfunction:: int json_array_set(json_t *array, unsigned int index, json_t *value)
 
    Replaces the element in *array* at position *index* with *value*.
-   Returns 0 on success, or -1 if *index* is out of range. The valid
-   range for *index* is from 0 to the return value of
-   :cfunc:`json_array_size()` minus 1.
+   The valid range for *index* is from 0 to the return value of
+   :cfunc:`json_array_size()` minus 1. Returns 0 on success and -1 on
+   error.
+
+.. cfunction:: int json_array_set_new(json_t *array, unsigned int index, json_t *value)
+
+   Like :cfunc:`json_array_set()` but steals the reference to *value*.
+   This is useful when *value* is newly created and not used after
+   the call.
+
+   .. versionadded:: 1.1
 
 .. cfunction:: int json_array_append(json_t *array, json_t *value)
 
    Appends *value* to the end of *array*, growing the size of *array*
    by 1. Returns 0 on success and -1 on error.
+
+.. cfunction:: int json_array_append_new(json_t *array, json_t *value)
+
+   Like :cfunc:`json_array_append()` but steals the reference to
+   *value*. This is useful when *value* is newly created and not used
+   after the call.
+
+   .. versionadded:: 1.1
+
+.. cfunction:: int json_array_insert(json_t *array, unsigned int index, json_t *value)
+
+   Inserts *value* to *array* at position *index*, shifting the
+   elements at *index* and after it one position towards the end of
+   the array. Returns 0 on success and -1 on error.
+
+   .. versionadded:: 1.1
+
+.. cfunction:: int json_array_insert_new(json_t *array, unsigned int index, json_t *value)
+
+   Like :cfunc:`json_array_insert()` but steals the reference to
+   *value*. This is useful when *value* is newly created and not used
+   after the call.
+
+   .. versionadded:: 1.1
+
+.. cfunction:: int json_array_remove(json_t *array, unsigned int index)
+
+   Removes the element in *array* at position *index*, shifting the
+   elements after *index* one position towards the start of the array.
+   Returns 0 on success and -1 on error.
+
+   .. versionadded:: 1.1
+
+.. cfunction:: int json_array_clear(json_t *array)
+
+   Removes all elements from *array*. Returns 0 on sucess and -1 on
+   error.
+
+   .. versionadded:: 1.1
+
+.. cfunction:: int json_array_extend(json_t *array, json_t *other_array)
+
+   Appends all elements in *other_array* to the end of *array*.
+   Returns 0 on success and -1 on error.
+
+   .. versionadded:: 1.1
 
 
 Object
@@ -275,8 +396,15 @@ Unicode string and the value is any JSON value.
 
    .. refcounting:: new
 
-   Returns a new value of the type :const:`JSON_OBJECT`, or *NULL* on
-   error. Initially, the object is empty.
+   Returns a new JSON object, or *NULL* on error. Initially, the
+   object is empty.
+
+.. cfunction:: unsigned int json_object_size(const json_t *object)
+
+   Returns the number of elements in *object*, or 0 if *object* is not
+   a JSON object.
+
+   .. versionadded:: 1.1
 
 .. cfunction:: json_t *json_object_get(const json_t *object, const char *key)
 
@@ -288,14 +416,37 @@ Unicode string and the value is any JSON value.
 .. cfunction:: int json_object_set(json_t *object, const char *key, json_t *value)
 
    Set the value of *key* to *value* in *object*. *key* must be a
-   valid terminated UTF-8 encoded Unicode string. If there already is
-   a value for *key*, it is replaced by the new value. Returns 0 on
-   success and -1 on error.
+   valid null terminated UTF-8 encoded Unicode string. If there
+   already is a value for *key*, it is replaced by the new value.
+   Returns 0 on success and -1 on error.
+
+.. cfunction:: int json_object_set_new(json_t *object, const char *key, json_t *value)
+
+   Like :cfunc:`json_object_set()` but steals the reference to
+   *value*. This is useful when *value* is newly created and not used
+   after the call.
+
+   .. versionadded:: 1.1
 
 .. cfunction:: int json_object_del(json_t *object, const char *key)
 
    Delete *key* from *object* if it exists. Returns 0 on success, or
    -1 if *key* was not found.
+
+
+.. cfunction:: int json_object_clear(json_t *object)
+
+   Remove all elements from *object*. Returns 0 on success and -1 if
+   *object* is not a JSON object.
+
+   .. versionadded:: 1.1
+
+.. cfunction:: int json_object_update(json_t *object, json_t *other)
+
+   Update *object* with the key-value pairs from *other*, overwriting
+   existing keys. Returns 0 on success or -1 on error.
+
+   .. versionadded:: 1.1
 
 
 The following functions implement an iteration protocol for objects:
@@ -321,6 +472,20 @@ The following functions implement an iteration protocol for objects:
 
    Extract the associated value from *iter*.
 
+The iteration protocol can be used for example as follows::
+
+   /* obj is a JSON object */
+   const char *key;
+   json_t *value;
+   void *iter = json_object_iter(obj);
+   while(iter)
+   {
+       key = json_object_iter_key(iter);
+       value = json_object_iter_value(iter);
+       /* use key and value ... */
+       iter = json_object_iter_next(obj, iter);
+   }
+
 
 Encoding
 ========
@@ -343,18 +508,21 @@ can be ORed together to obtain *flags*.
 The following functions perform the actual JSON encoding. The result
 is in UTF-8.
 
-.. cfunction:: char *json_dumps(const json_t *root, uint32_t flags)
+.. cfunction:: char *json_dumps(const json_t *root, unsigned long flags)
 
    Returns the JSON representation of *root* as a string, or *NULL* on
    error. *flags* is described above. The return value must be freed
    by the caller using :cfunc:`free()`.
 
-.. cfunction:: int json_dumpf(const json_t *root, FILE *output, uint32_t flags)
+.. cfunction:: int json_dumpf(const json_t *root, FILE *output, unsigned long flags)
 
    Write the JSON representation of *root* to the stream *output*.
    *flags* is described above. Returns 0 on success and -1 on error.
+   If an error occurs, something may have already been written to
+   *output*. In this case, the output is undefined and most likely not
+   valid JSON.
 
-.. cfunction:: int json_dump_file(const json_t *json, const char *path, uint32_t flags)
+.. cfunction:: int json_dump_file(const json_t *json, const char *path, unsigned long flags)
 
    Write the JSON representation of *root* to the file *path*. If
    *path* already exists, it is overwritten. *flags* is described

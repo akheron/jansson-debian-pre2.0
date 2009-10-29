@@ -13,8 +13,8 @@ typedef int (*key_cmp_fn)(const void *key1, const void *key2);
 typedef void (*free_fn)(void *key);
 
 struct hashtable_list {
-  struct hashtable_list *prev;
-  struct hashtable_list *next;
+    struct hashtable_list *prev;
+    struct hashtable_list *next;
 };
 
 struct hashtable_pair {
@@ -133,6 +133,15 @@ void *hashtable_get(hashtable_t *hashtable, const void *key);
  * Returns 0 on success, or -1 if the key was not found.
  */
 int hashtable_del(hashtable_t *hashtable, const void *key);
+
+/**
+ * hashtable_clear - Clear hashtable
+ *
+ * @hashtable: The hashtable object
+ *
+ * Removes all items from the hashtable.
+ */
+void hashtable_clear(hashtable_t *hashtable);
 
 /**
  * hashtable_iter - Iterate over hashtable
