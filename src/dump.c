@@ -9,10 +9,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <jansson.h>
+#include "jansson_private.h"
 #include "strbuffer.h"
+
+#define MAX_INTEGER_STR_LENGTH  100
+#define MAX_REAL_STR_LENGTH     100
 
 typedef int (*dump_func)(const char *buffer, int size, void *data);
 
@@ -36,22 +39,23 @@ static int dump_to_file(const char *buffer, int size, void *data)
     return 0;
 }
 
-static int dump_indent(uint32_t flags, int depth, dump_func dump, void *data)
+/* 256 spaces (the maximum indentation size) */
+static char whitespace[] = "                                                                                                                                                                                                                                                                ";
+
+static int dump_indent(unsigned long flags, int depth, dump_func dump, void *data)
 {
     if(JSON_INDENT(flags) > 0)
     {
-        char *ws_buffer;
-        int ws_count = JSON_INDENT(flags) * depth;
+        int i, ws_count = JSON_INDENT(flags);
 
         if(dump("\n", 1, data))
             return -1;
 
-        if(ws_count == 0)
-            return 0;
-
-        ws_buffer = alloca(ws_count);
-        memset(ws_buffer, ' ', ws_count);
-        return dump(ws_buffer, ws_count, data);
+        for(i = 0; i < depth; i++)
+        {
+            if(dump(whitespace, ws_count, data))
+                return -1;
+        }
     }
     return 0;
 }
@@ -111,7 +115,7 @@ static int dump_string(const char *str, dump_func dump, void *data)
     return dump("\"", 1, data);
 }
 
-static int do_dump(const json_t *json, uint32_t flags, int depth,
+static int do_dump(const json_t *json, unsigned long flags, int depth,
                    dump_func dump, void *data)
 {
     switch(json_typeof(json)) {
@@ -126,30 +130,26 @@ static int do_dump(const json_t *json, uint32_t flags, int depth,
 
         case JSON_INTEGER:
         {
-            char *buffer;
-            int size, ret;
+            char buffer[MAX_INTEGER_STR_LENGTH];
+            int size;
 
-            size = asprintf(&buffer, "%d", json_integer_value(json));
-            if(size == -1)
+            size = snprintf(buffer, MAX_INTEGER_STR_LENGTH, "%d", json_integer_value(json));
+            if(size >= MAX_INTEGER_STR_LENGTH)
                 return -1;
 
-            ret = dump(buffer, size, data);
-            free(buffer);
-            return ret;
+            return dump(buffer, size, data);
         }
 
         case JSON_REAL:
         {
-            char *buffer;
-            int size, ret;
+            char buffer[MAX_REAL_STR_LENGTH];
+            int size;
 
-            size = asprintf(&buffer, "%.17f", json_real_value(json));
-            if(size == -1)
+            size = snprintf(buffer, MAX_REAL_STR_LENGTH, "%0.17f", json_real_value(json));
+            if(size >= MAX_REAL_STR_LENGTH)
                 return -1;
 
-            ret = dump(buffer, size, data);
-            free(buffer);
-            return ret;
+            return dump(buffer, size, data);
         }
 
         case JSON_STRING:
@@ -158,7 +158,16 @@ static int do_dump(const json_t *json, uint32_t flags, int depth,
         case JSON_ARRAY:
         {
             int i;
-            int n = json_array_size(json);
+            int n;
+            json_array_t *array;
+
+            /* detect circular references */
+            array = json_to_array(json);
+            if(array->visited)
+                return -1;
+            array->visited = 1;
+
+            n = json_array_size(json);
 
             if(dump("[", 1, data))
                 return -1;
@@ -184,12 +193,23 @@ static int do_dump(const json_t *json, uint32_t flags, int depth,
                         return -1;
                 }
             }
+
+            array->visited = 0;
             return dump("]", 1, data);
         }
 
         case JSON_OBJECT:
         {
-            void *iter = json_object_iter((json_t *)json);
+            json_object_t *object;
+            void *iter;
+
+            /* detect circular references */
+            object = json_to_object(json);
+            if(object->visited)
+                return -1;
+            object->visited = 1;
+
+            iter = json_object_iter((json_t *)json);
 
             if(dump("{", 1, data))
                 return -1;
@@ -222,6 +242,8 @@ static int do_dump(const json_t *json, uint32_t flags, int depth,
 
                 iter = next;
             }
+
+            object->visited = 0;
             return dump("}", 1, data);
         }
 
@@ -232,7 +254,7 @@ static int do_dump(const json_t *json, uint32_t flags, int depth,
 }
 
 
-char *json_dumps(const json_t *json, uint32_t flags)
+char *json_dumps(const json_t *json, unsigned long flags)
 {
     strbuffer_t strbuff;
     char *result;
@@ -241,13 +263,17 @@ char *json_dumps(const json_t *json, uint32_t flags)
         return NULL;
 
     if(strbuffer_init(&strbuff))
-      return NULL;
-
-    if(do_dump(json, flags, 0, dump_to_strbuffer, (void *)&strbuff))
         return NULL;
 
-    if(dump_to_strbuffer("\n", 1, (void *)&strbuff))
+    if(do_dump(json, flags, 0, dump_to_strbuffer, (void *)&strbuff)) {
+        strbuffer_close(&strbuff);
         return NULL;
+    }
+
+    if(dump_to_strbuffer("\n", 1, (void *)&strbuff)) {
+        strbuffer_close(&strbuff);
+        return NULL;
+    }
 
     result = strdup(strbuffer_value(&strbuff));
     strbuffer_close(&strbuff);
@@ -255,7 +281,7 @@ char *json_dumps(const json_t *json, uint32_t flags)
     return result;
 }
 
-int json_dumpf(const json_t *json, FILE *output, uint32_t flags)
+int json_dumpf(const json_t *json, FILE *output, unsigned long flags)
 {
     if(!json_is_array(json) && !json_is_object(json))
         return -1;
@@ -265,7 +291,7 @@ int json_dumpf(const json_t *json, FILE *output, uint32_t flags)
     return dump_to_file("\n", 1, (void *)output);
 }
 
-int json_dump_file(const json_t *json, const char *path, uint32_t flags)
+int json_dump_file(const json_t *json, const char *path, unsigned long flags)
 {
     int result;
 

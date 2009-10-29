@@ -11,6 +11,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* types */
 
 typedef enum {
@@ -54,7 +58,7 @@ json_t *json_null(void);
 
 static inline json_t *json_incref(json_t *json)
 {
-    if(json)
+    if(json && json->refcount != (unsigned int)-1)
         ++json->refcount;
     return json;
 }
@@ -64,30 +68,65 @@ void json_delete(json_t *json);
 
 static inline void json_decref(json_t *json)
 {
-    if(json && --json->refcount == 0)
+    if(json && json->refcount != (unsigned int)-1 && --json->refcount == 0)
         json_delete(json);
 }
 
 
 /* getters, setters, manipulation */
 
+unsigned int json_object_size(const json_t *object);
 json_t *json_object_get(const json_t *object, const char *key);
-int json_object_set(json_t *object, const char *key, json_t *value);
+int json_object_set_new(json_t *object, const char *key, json_t *value);
 int json_object_del(json_t *object, const char *key);
+int json_object_clear(json_t *object);
+int json_object_update(json_t *object, json_t *other);
 void *json_object_iter(json_t *object);
 void *json_object_iter_next(json_t *object, void *iter);
 const char *json_object_iter_key(void *iter);
 json_t *json_object_iter_value(void *iter);
 
+static inline
+int json_object_set(json_t *object, const char *key, json_t *value)
+{
+    return json_object_set_new(object, key, json_incref(value));
+}
+
 unsigned int json_array_size(const json_t *array);
 json_t *json_array_get(const json_t *array, unsigned int index);
-int json_array_set(json_t *array, unsigned int index, json_t *value);
-int json_array_append(json_t *array, json_t *value);
+int json_array_set_new(json_t *array, unsigned int index, json_t *value);
+int json_array_append_new(json_t *array, json_t *value);
+int json_array_insert_new(json_t *array, unsigned int index, json_t *value);
+int json_array_remove(json_t *array, unsigned int index);
+int json_array_clear(json_t *array);
+int json_array_extend(json_t *array, json_t *other);
 
-const char *json_string_value(const json_t *json);
-int json_integer_value(const json_t *json);
-double json_real_value(const json_t *json);
+static inline
+int json_array_set(json_t *array, unsigned int index, json_t *value)
+{
+    return json_array_set_new(array, index, json_incref(value));
+}
+
+static inline
+int json_array_append(json_t *array, json_t *value)
+{
+    return json_array_append_new(array, json_incref(value));
+}
+
+static inline
+int json_array_insert(json_t *array, unsigned int index, json_t *value)
+{
+    return json_array_insert_new(array, index, json_incref(value));
+}
+
+const char *json_string_value(const json_t *string);
+int json_integer_value(const json_t *integer);
+double json_real_value(const json_t *real);
 double json_number_value(const json_t *json);
+
+int json_string_set(const json_t *string, const char *value);
+int json_integer_set(const json_t *integer, int value);
+int json_real_set(const json_t *real, double value);
 
 
 /* loading, printing */
@@ -105,8 +144,12 @@ json_t *json_load_file(const char *path, json_error_t *error);
 
 #define JSON_INDENT(n)   (n & 0xFF)
 
-char *json_dumps(const json_t *json, uint32_t flags);
-int json_dumpf(const json_t *json, FILE *output, uint32_t flags);
-int json_dump_file(const json_t *json, const char *path, uint32_t flags);
+char *json_dumps(const json_t *json, unsigned long flags);
+int json_dumpf(const json_t *json, FILE *output, unsigned long flags);
+int json_dump_file(const json_t *json, const char *path, unsigned long flags);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
