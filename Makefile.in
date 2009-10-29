@@ -540,6 +540,7 @@ distcheck: dist
 	test -d $(distdir)/_build || exit 0; \
 	dc_install_base=`$(am__cd) $(distdir)/_inst && pwd | sed -e 's,^[^:\\/]:[\\/],/,'` \
 	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \
+	  && $(MAKE) $(AM_MAKEFLAGS) distcheck-hook \
 	  && am__cwd=`pwd` \
 	  && $(am__cd) $(distdir)/_build \
 	  && ../configure --srcdir=.. --prefix="$$dc_install_base" \
@@ -707,6 +708,11 @@ uninstall-am:
 	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
 	ps ps-am tags tags-recursive uninstall uninstall-am
 
+
+distcheck-hook:
+	sphinx-build -b html -W \
+		$(distdir)/doc \
+		$(distdir)/_build/doc/.build/html
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
