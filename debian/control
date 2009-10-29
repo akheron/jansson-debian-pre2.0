@@ -37,7 +37,7 @@ Package: libjansson-doc
 Section: doc
 Architecture: all
 Suggests: libjansson0 (= ${binary:Version})
-Depends: ${misc:Depends}
+Depends: ${misc:Depends}, libjs-jquery
 Description: C library for encoding, decoding and manipulating JSON data
  Jansson is a C library for encoding, decoding and manipulating JSON
  data. It features simple and intuitive API and data model,
