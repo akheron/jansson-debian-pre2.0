@@ -9,10 +9,7 @@ DEB_INSTALL_CHANGELOGS_ALL = CHANGES
 DEB_COMPRESS_EXCLUDE = html/
 
 build/libjansson-doc::
-	sphinx-build doc debian/html
-
-install/libjansson-doc::
-	rm -rf debian/html/.buildinfo debian/html/.doctrees
+	sphinx-build -d debian/doc-build/doctrees doc debian/doc-build/html
 
 clean::
-	rm -rf debian/html
+	rm -rf debian/doc-build
