@@ -1,3 +1,9 @@
+jansson (1.1.2-1~ppa1) karmic; urgency=low
+
+  * New upstream release
+
+ -- Petri Lehtinen <petri@digip.org>  Sun, 08 Nov 2009 14:17:21 +0200
+
 jansson (1.1.1-1~ppa2~hardy1) hardy; urgency=low
 
   * Backport to hardy
