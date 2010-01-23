@@ -229,6 +229,16 @@ String
    Returns a new JSON string, or *NULL* on error. *value* must be a
    valid UTF-8 encoded Unicode string.
 
+.. cfunction:: json_t *json_string_nocheck(const char *value)
+
+   .. refcounting:: new
+
+   Like :cfunc:`json_string`, but doesn't check that *value* is valid
+   UTF-8. Use this function only if you are certain that this really
+   is the case (e.g. you have already checked it by other means).
+
+   .. versionadded:: 1.2
+
 .. cfunction:: const char *json_string_value(const json_t *string)
 
    Returns the associated value of *string* as a null terminated UTF-8
@@ -241,6 +251,15 @@ String
    error.
 
    .. versionadded:: 1.1
+
+.. cfunction:: int json_string_set_nocheck(const json_t *string, const char *value)
+
+   Like :cfunc:`json_string_set`, but doesn't check that *value* is
+   valid UTF-8. Use this function only if you are certain that this
+   really is the case (e.g. you have already checked it by other
+   means).
+
+   .. versionadded:: 1.2
 
 
 Number
@@ -420,6 +439,15 @@ Unicode string and the value is any JSON value.
    already is a value for *key*, it is replaced by the new value.
    Returns 0 on success and -1 on error.
 
+.. cfunction:: int json_object_set_nocheck(json_t *object, const char *key, json_t *value)
+
+   Like :cfunc:`json_object_set`, but doesn't check that *key* is
+   valid UTF-8. Use this function only if you are certain that this
+   really is the case (e.g. you have already checked it by other
+   means).
+
+   .. versionadded:: 1.2
+
 .. cfunction:: int json_object_set_new(json_t *object, const char *key, json_t *value)
 
    Like :cfunc:`json_object_set()` but steals the reference to
@@ -427,6 +455,15 @@ Unicode string and the value is any JSON value.
    after the call.
 
    .. versionadded:: 1.1
+
+.. cfunction:: int json_object_set_new_nocheck(json_t *object, const char *key, json_t *value)
+
+   Like :cfunc:`json_object_set_new`, but doesn't check that *key* is
+   valid UTF-8. Use this function only if you are certain that this
+   really is the case (e.g. you have already checked it by other
+   means).
+
+   .. versionadded:: 1.2
 
 .. cfunction:: int json_object_del(json_t *object, const char *key)
 
@@ -494,16 +531,44 @@ This sections describes the functions that can be used to encode
 values to JSON. Only objects and arrays can be encoded, since they are
 the only valid "root" values of a JSON text.
 
+By default, the output has no newlines, and spaces are used between
+array and object elements for a readable output. This behavior can be
+altered by using the ``JSON_INDENT`` and ``JSON_COMPACT`` flags
+described below. A newline is never appended to the end of the encoded
+JSON data.
+
 Each function takes a *flags* parameter that controls some aspects of
 how the data is encoded. Its default value is 0. The following macros
 can be ORed together to obtain *flags*.
 
 ``JSON_INDENT(n)``
-   Pretty-print the result, indenting arrays and objects by *n*
-   spaces. The valid range for *n* is between 0 and 255, other values
-   result in an undefined output. If ``JSON_INDENT`` is not used or
-   *n* is 0, no pretty-printing is done and the result is a compact
-   representation.
+   Pretty-print the result, using newlines between array and object
+   items, and indenting with *n* spaces. The valid range for *n* is
+   between 0 and 255, other values result in an undefined output. If
+   ``JSON_INDENT`` is not used or *n* is 0, no newlines are inserted
+   between array and object items.
+
+``JSON_COMPACT``
+   This flag enables a compact representation, i.e. sets the separator
+   between array and object items to ``","`` and between object keys
+   and values to ``":"``. Without this flag, the corresponding
+   separators are ``", "`` and ``": "`` for more readable output.
+
+   .. versionadded:: 1.2
+
+``JSON_ENSURE_ASCII``
+   If this flag is used, the output is guaranteed to consist only of
+   ASCII characters. This is achived by escaping all Unicode
+   characters outside the ASCII range.
+
+   .. versionadded:: 1.2
+
+``JSON_SORT_KEYS``
+   If this flag is used, all the objects in output are sorted by key.
+   This is useful e.g. if two JSON texts are diffed or visually
+   compared.
+
+   .. versionadded:: 1.2
 
 The following functions perform the actual JSON encoding. The result
 is in UTF-8.
@@ -608,3 +673,75 @@ The following functions perform the actual JSON decoding.
    object it contains, or *NULL* on error, in which case *error* is
    filled with information about the error. See above for discussion
    on the *error* parameter.
+
+
+Equality
+========
+
+Testing for equality of two JSON values cannot, in general, be
+achieved using the ``==`` operator. Equality in the terms of the
+``==`` operator states that the two :ctype:`json_t` pointers point to
+exactly the same JSON value. However, two JSON values can be equal not
+only if they are exactly the same value, but also if they have equal
+"contents":
+
+* Two integer or real values are equal if their contained numeric
+  values are equal. An integer value is never equal to a real value,
+  though.
+
+* Two strings are equal if their contained UTF-8 strings are equal.
+
+* Two arrays are equal if they have the same number of elements and
+  each element in the first array is equal to the corresponding
+  element in the second array.
+
+* Two objects are equal if they have exactly the same keys and the
+  value for each key in the first object is equal to the value of the
+  corresponding key in the second object.
+
+* Two true, false or null values have no "contents", so they are equal
+  if their types are equal. (Because these values are singletons,
+  their equality can actually be tested with ``==``.)
+
+The following function can be used to test whether two JSON values are
+equal.
+
+.. cfunction:: int json_equal(json_t *value1, json_t *value2)
+
+   Returns 1 if *value1* and *value2* are equal, as defined above.
+   Returns 0 if they are inequal or one or both of the pointers are
+   *NULL*.
+
+   .. versionadded:: 1.2
+
+
+Copying
+=======
+
+Because of reference counting, passing JSON values around doesn't
+require copying them. But sometimes a fresh copy of a JSON value is
+needed. For example, if you need to modify an array, but still want to
+use the original afterwards, you should take a copy of it first.
+
+Jansson supports two kinds of copying: shallow and deep. There is a
+difference between these methods only for arrays and objects. Shallow
+copying only copies the first level value (array or object) and uses
+the same child values in the copied value. Deep copying makes a fresh
+copy of the child values, too. Moreover, all the child values are deep
+copied in a recursive fashion.
+
+.. cfunction:: json_t *json_copy(json_t *value)
+
+   .. refcounting:: new
+
+   Returns a shallow copy of *value*, or *NULL* on error.
+
+   .. versionadded:: 1.2
+
+.. cfunction:: json_t *json_deep_copy(json_t *value)
+
+   .. refcounting:: new
+
+   Returns a deep copy of *value*, or *NULL* on error.
+
+   .. versionadded:: 1.2
