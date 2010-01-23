@@ -27,7 +27,7 @@ Conflicts: libjansson-dev
 Suggests: libjansson-doc
 Architecture: any
 Depends: ${misc:Depends}, libjansson0 (= ${binary:Version}), libc6-dev | libc-dev
-Description: C library for encoding, decoding and manipulating JSON data
+Description: C library for encoding, decoding and manipulating JSON data - development files
  Jansson is a C library for encoding, decoding and manipulating JSON
  data. It features simple and intuitive API and data model,
  comprehensive documentation, no dependencies on other libraries, full
@@ -41,7 +41,7 @@ Section: doc
 Architecture: all
 Suggests: libjansson0 (= ${binary:Version})
 Depends: ${misc:Depends}, libjs-jquery
-Description: C library for encoding, decoding and manipulating JSON data
+Description: C library for encoding, decoding and manipulating JSON data - documentation
  Jansson is a C library for encoding, decoding and manipulating JSON
  data. It features simple and intuitive API and data model,
  comprehensive documentation, no dependencies on other libraries, full
