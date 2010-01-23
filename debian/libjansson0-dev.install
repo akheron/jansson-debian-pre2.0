@@ -2,3 +2,4 @@ usr/include
 usr/lib/libjansson.a
 usr/lib/libjansson.la
 usr/lib/libjansson.so
+usr/lib/pkgconfig/jansson.pc
