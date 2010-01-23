@@ -157,10 +157,11 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = \
-	conf.py apiref.rst gettingstarted.rst github_commits.c index.rst \
-	tutorial.rst ext/refcounting.py
+EXTRA_DIST = conf.py apiref.rst changes.rst gettingstarted.rst		\
+	github_commits.c index.rst tutorial.rst ext/refcounting.py
 
+SPHINXBUILD = sphinx-build
+SPHINXOPTS = -d _build/doctrees -W
 all: all-am
 
 .SUFFIXES:
@@ -280,7 +281,7 @@ dvi-am:
 
 html: html-am
 
-html-am:
+html-am: html-local
 
 info: info-am
 
@@ -296,7 +297,7 @@ install-exec-am:
 
 install-html: install-html-am
 
-install-html-am:
+install-html-am: install-html-local
 
 install-info: install-info-am
 
@@ -330,26 +331,37 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am:
+uninstall-am: uninstall-local
 
 .MAKE: install-am install-strip
 
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
 	clean-local distclean distclean-generic distclean-libtool \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-dvi \
+	distdir dvi dvi-am html html-am html-local info info-am \
+	install install-am install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	uninstall uninstall-am
+	install-html-am install-html-local install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
+	uninstall-local
 
+
+html-local:
+	$(SPHINXBUILD) -b html $(SPHINXOPTS) $(srcdir) _build/html
+
+install-html-local: html
+	mkdir -p $(DESTDIR)$(htmldir)
+	cp -r _build/html $(DESTDIR)$(htmldir)
+
+uninstall-local:
+	rm -rf $(DESTDIR)$(htmldir)
 
 clean-local:
-	rm -rf .build
-	rm -f ext/refcounting.pyc
+	rm -rf _build
+	rm -f ext/refcounting.pyc changes.rst
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
