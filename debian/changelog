@@ -1,3 +1,15 @@
+jansson (1.2-0ppa1) karmic; urgency=low
+
+  * New upstream release 1.2
+  * Add debian/watch
+  * Use debhelper >= 7
+  * Register documentation with doc-base
+  * Change duplicate short descriptions of packages
+  * Remove explicit dependency for Python
+  * Install pkg-config file in libjansson-dev
+
+ -- Petri Lehtinen <petri@digip.org>  Sun, 24 Jan 2010 13:14:23 +0200
+
 jansson (1.1.2-1~ppa1~hardy1) hardy; urgency=low
 
   * Backport to hardy

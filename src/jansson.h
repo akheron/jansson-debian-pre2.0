@@ -49,6 +49,7 @@ typedef struct {
 json_t *json_object(void);
 json_t *json_array(void);
 json_t *json_string(const char *value);
+json_t *json_string_nocheck(const char *value);
 json_t *json_integer(int value);
 json_t *json_real(double value);
 json_t *json_true(void);
@@ -77,6 +78,7 @@ static inline void json_decref(json_t *json)
 unsigned int json_object_size(const json_t *object);
 json_t *json_object_get(const json_t *object, const char *key);
 int json_object_set_new(json_t *object, const char *key, json_t *value);
+int json_object_set_new_nocheck(json_t *object, const char *key, json_t *value);
 int json_object_del(json_t *object, const char *key);
 int json_object_clear(json_t *object);
 int json_object_update(json_t *object, json_t *other);
@@ -89,6 +91,12 @@ static inline
 int json_object_set(json_t *object, const char *key, json_t *value)
 {
     return json_object_set_new(object, key, json_incref(value));
+}
+
+static inline
+int json_object_set_nocheck(json_t *object, const char *key, json_t *value)
+{
+    return json_object_set_new_nocheck(object, key, json_incref(value));
 }
 
 unsigned int json_array_size(const json_t *array);
@@ -123,9 +131,21 @@ int json_integer_value(const json_t *integer);
 double json_real_value(const json_t *real);
 double json_number_value(const json_t *json);
 
-int json_string_set(const json_t *string, const char *value);
-int json_integer_set(const json_t *integer, int value);
-int json_real_set(const json_t *real, double value);
+int json_string_set(json_t *string, const char *value);
+int json_string_set_nocheck(json_t *string, const char *value);
+int json_integer_set(json_t *integer, int value);
+int json_real_set(json_t *real, double value);
+
+
+/* equality */
+
+int json_equal(json_t *value1, json_t *value2);
+
+
+/* copying */
+
+json_t *json_copy(json_t *value);
+json_t *json_deep_copy(json_t *value);
 
 
 /* loading, printing */
@@ -141,7 +161,10 @@ json_t *json_loads(const char *input, json_error_t *error);
 json_t *json_loadf(FILE *input, json_error_t *error);
 json_t *json_load_file(const char *path, json_error_t *error);
 
-#define JSON_INDENT(n)   (n & 0xFF)
+#define JSON_INDENT(n)      (n & 0xFF)
+#define JSON_COMPACT        0x100
+#define JSON_ENSURE_ASCII   0x200
+#define JSON_SORT_KEYS      0x400
 
 char *json_dumps(const json_t *json, unsigned long flags);
 int json_dumpf(const json_t *json, FILE *output, unsigned long flags);
