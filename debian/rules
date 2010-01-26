@@ -1,14 +1,13 @@
 #!/usr/bin/make -f
 
-include /usr/share/cdbs/1/rules/debhelper.mk
-include /usr/share/cdbs/1/class/autotools.mk
+%:
+	dh $@
 
-DEB_MAKE_CHECK_TARGET = check
-DEB_INSTALL_CHANGELOGS_ALL = CHANGES
-DEB_COMPRESS_EXCLUDE = html/
+override_dh_auto_build:
+	make all html
 
-build/libjansson-doc::
-	sphinx-build -d debian/doc-build/doctrees doc debian/doc-build/html
+override_dh_auto_install:
+	make DESTDIR=$(CURDIR)/debian/tmp install install-html
 
-clean::
-	rm -rf debian/doc-build
+override_dh_compress:
+	dh_compress -Xhtml/
