@@ -3,7 +3,7 @@ Section: devel
 Priority: optional
 Maintainer: Petri Lehtinen <petri@digip.org>
 Build-Depends: cdbs (>= 0.4.49), debhelper (>= 6), autoconf, automake,
- libtool
+ libtool, patchutils
 Build-Conflicts: autoconf2.13, automake1.4
 Standards-Version: 3.8.3
 Homepage: http://www.digip.org/jansson/
