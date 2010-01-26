@@ -1,3 +1,12 @@
+jansson (1.2-0ppa1~hardy1) hardy; urgency=low
+
+  * Remove test system patches
+  * Use debhelper 6
+  * Disable Sphinx in make check target
+  * Add patchutils to Build-Depends
+
+ -- Petri Lehtinen <petri@digip.org>  Tue, 26 Jan 2010 08:47:21 +0200
+
 jansson (1.2-0ppa1) karmic; urgency=low
 
   * New upstream release 1.2
