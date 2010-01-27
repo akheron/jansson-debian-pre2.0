@@ -1,3 +1,10 @@
+jansson (1.2-0ppa2) karmic; urgency=low
+
+  * Dispense with CDBS
+  * Add symbols control file
+
+ -- Petri Lehtinen <petri@digip.org>  Wed, 27 Jan 2010 09:02:12 +0200
+
 jansson (1.2-0ppa1) karmic; urgency=low
 
   * New upstream release 1.2
