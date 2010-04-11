@@ -1,3 +1,11 @@
+jansson (1.2.1-0ppa1) karmic; urgency=low
+
+  * New upstream release 1.2.1
+  * Shorten the short descriptions of packages
+  * Bump Standards-Version to 3.8.4
+
+ -- Petri Lehtinen <petri@digip.org>  Sun, 11 Apr 2010 22:39:21 +0300
+
 jansson (1.2-0ppa2) karmic; urgency=low
 
   * Dispense with CDBS
