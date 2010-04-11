@@ -3,7 +3,7 @@ Section: devel
 Priority: optional
 Maintainer: Petri Lehtinen <petri@digip.org>
 Build-Depends: debhelper (>= 7.0.50), python-sphinx (>= 0.6)
-Standards-Version: 3.8.3
+Standards-Version: 3.8.4
 Homepage: http://www.digip.org/jansson/
 Vcs-Browser: http://github.com/akheron/jansson-debian
 Vcs-Git: git://github.com/akheron/jansson-debian.git
