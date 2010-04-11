@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2009 Petri Lehtinen <petri@digip.org>
+# Copyright (c) 2009, 2010 Petri Lehtinen <petri@digip.org>
 #
 # Jansson is free software; you can redistribute it and/or modify
 # it under the terms of the MIT license. See LICENSE for details.
@@ -17,7 +17,8 @@ run_test() {
     else
         $test_runner $suite_builddir/${test_name%.c} \
             >$test_log/stdout \
-            2>$test_log/stderr
+            2>$test_log/stderr \
+            || return 1
         valgrind_check $test_log/stderr || return 1
     fi
 }

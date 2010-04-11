@@ -1,11 +1,14 @@
 /*
- * Copyright (c) 2009 Petri Lehtinen <petri@digip.org>
+ * Copyright (c) 2009, 2010 Petri Lehtinen <petri@digip.org>
  *
  * Jansson is free software; you can redistribute it and/or modify
  * it under the terms of the MIT license. See LICENSE for details.
  */
 
 #define _GNU_SOURCE
+
+#include <config.h>
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -784,7 +787,7 @@ json_t *json_true(void)
 {
     static json_t the_true = {
         .type = JSON_TRUE,
-        .refcount = (unsigned int)1
+        .refcount = (unsigned int)-1
     };
     return &the_true;
 }
@@ -794,7 +797,7 @@ json_t *json_false(void)
 {
     static json_t the_false = {
         .type = JSON_FALSE,
-        .refcount = (unsigned int)1
+        .refcount = (unsigned int)-1
     };
     return &the_false;
 }
@@ -804,7 +807,7 @@ json_t *json_null(void)
 {
     static json_t the_null = {
         .type = JSON_NULL,
-        .refcount = (unsigned int)1
+        .refcount = (unsigned int)-1
     };
     return &the_null;
 }

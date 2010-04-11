@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2009 Petri Lehtinen <petri@digip.org>
+ * Copyright (c) 2009, 2010 Petri Lehtinen <petri@digip.org>
  *
  * Jansson is free software; you can redistribute it and/or modify
  * it under the terms of the MIT license. See LICENSE for details.
  */
 
 #include <string.h>
-#include <stdint.h>
+#include "utf.h"
 
 int utf8_encode(int32_t codepoint, char *buffer, int *size)
 {

@@ -1,4 +1,4 @@
-# Copyright (c) 2009 Petri Lehtinen <petri@digip.org>
+# Copyright (c) 2009, 2010 Petri Lehtinen <petri@digip.org>
 #
 # Jansson is free software; you can redistribute it and/or modify
 # it under the terms of the MIT license. See LICENSE for details.
@@ -29,7 +29,7 @@ for test_path in $suite_srcdir/*; do
     rm -rf $test_log
     mkdir -p $test_log
     if [ $VERBOSE -eq 1 ]; then
-        echo -n "$name... "
+        echo -n "$test_name... "
     fi
 
     if run_test; then
