@@ -153,9 +153,16 @@ static int dump_string(const char *str, int ascii, dump_func dump, void *data)
     return dump("\"", 1, data);
 }
 
-static int object_key_cmp(const void *key1, const void *key2)
+static int object_key_compare_keys(const void *key1, const void *key2)
 {
-    return strcmp(*(const char **)key1, *(const char **)key2);
+    return strcmp((*(const object_key_t **)key1)->key,
+                  (*(const object_key_t **)key2)->key);
+}
+
+static int object_key_compare_serials(const void *key1, const void *key2)
+{
+    return (*(const object_key_t **)key1)->serial -
+           (*(const object_key_t **)key2)->serial;
 }
 
 static int do_dump(const json_t *json, unsigned long flags, int depth,
@@ -224,38 +231,44 @@ static int do_dump(const json_t *json, unsigned long flags, int depth,
             /* detect circular references */
             array = json_to_array(json);
             if(array->visited)
-                return -1;
+                goto array_error;
             array->visited = 1;
 
             n = json_array_size(json);
 
             if(dump("[", 1, data))
-                return -1;
-            if(n == 0)
+                goto array_error;
+            if(n == 0) {
+                array->visited = 0;
                 return dump("]", 1, data);
+            }
             if(dump_indent(flags, depth + 1, 0, dump, data))
-                return -1;
+                goto array_error;
 
             for(i = 0; i < n; ++i) {
                 if(do_dump(json_array_get(json, i), flags, depth + 1,
                            dump, data))
-                    return -1;
+                    goto array_error;
 
                 if(i < n - 1)
                 {
                     if(dump(",", 1, data) ||
                        dump_indent(flags, depth + 1, 1, dump, data))
-                        return -1;
+                        goto array_error;
                 }
                 else
                 {
                     if(dump_indent(flags, depth, 0, dump, data))
-                        return -1;
+                        goto array_error;
                 }
             }
 
             array->visited = 0;
             return dump("]", 1, data);
+
+        array_error:
+            array->visited = 0;
+            return -1;
         }
 
         case JSON_OBJECT:
@@ -277,48 +290,54 @@ static int do_dump(const json_t *json, unsigned long flags, int depth,
             /* detect circular references */
             object = json_to_object(json);
             if(object->visited)
-                return -1;
+                goto object_error;
             object->visited = 1;
 
             iter = json_object_iter((json_t *)json);
 
             if(dump("{", 1, data))
-                return -1;
-            if(!iter)
+                goto object_error;
+            if(!iter) {
+                object->visited = 0;
                 return dump("}", 1, data);
+            }
             if(dump_indent(flags, depth + 1, 0, dump, data))
-                return -1;
+                goto object_error;
 
-            if(flags & JSON_SORT_KEYS)
+            if(flags & JSON_SORT_KEYS || flags & JSON_PRESERVE_ORDER)
             {
-                /* Sort keys */
-
-                const char **keys;
+                const object_key_t **keys;
                 unsigned int size;
                 unsigned int i;
+                int (*cmp_func)(const void *, const void *);
 
                 size = json_object_size(json);
-                keys = malloc(size * sizeof(const char *));
+                keys = malloc(size * sizeof(object_key_t *));
                 if(!keys)
-                    return -1;
+                    goto object_error;
 
                 i = 0;
                 while(iter)
                 {
-                    keys[i] = json_object_iter_key(iter);
+                    keys[i] = jsonp_object_iter_fullkey(iter);
                     iter = json_object_iter_next((json_t *)json, iter);
                     i++;
                 }
                 assert(i == size);
 
-                qsort(keys, size, sizeof(const char *), object_key_cmp);
+                if(flags & JSON_SORT_KEYS)
+                    cmp_func = object_key_compare_keys;
+                else
+                    cmp_func = object_key_compare_serials;
+
+                qsort(keys, size, sizeof(object_key_t *), cmp_func);
 
                 for(i = 0; i < size; i++)
                 {
                     const char *key;
                     json_t *value;
 
-                    key = keys[i];
+                    key = keys[i]->key;
                     value = json_object_get(json, key);
                     assert(value);
 
@@ -327,7 +346,7 @@ static int do_dump(const json_t *json, unsigned long flags, int depth,
                        do_dump(value, flags, depth + 1, dump, data))
                     {
                         free(keys);
-                        return -1;
+                        goto object_error;
                     }
 
                     if(i < size - 1)
@@ -336,7 +355,7 @@ static int do_dump(const json_t *json, unsigned long flags, int depth,
                            dump_indent(flags, depth + 1, 1, dump, data))
                         {
                             free(keys);
-                            return -1;
+                            goto object_error;
                         }
                     }
                     else
@@ -344,7 +363,7 @@ static int do_dump(const json_t *json, unsigned long flags, int depth,
                         if(dump_indent(flags, depth, 0, dump, data))
                         {
                             free(keys);
-                            return -1;
+                            goto object_error;
                         }
                     }
                 }
@@ -363,18 +382,18 @@ static int do_dump(const json_t *json, unsigned long flags, int depth,
                     if(dump(separator, separator_length, data) ||
                        do_dump(json_object_iter_value(iter), flags, depth + 1,
                                dump, data))
-                        return -1;
+                        goto object_error;
 
                     if(next)
                     {
                         if(dump(",", 1, data) ||
                            dump_indent(flags, depth + 1, 1, dump, data))
-                            return -1;
+                            goto object_error;
                     }
                     else
                     {
                         if(dump_indent(flags, depth, 0, dump, data))
-                            return -1;
+                            goto object_error;
                     }
 
                     iter = next;
@@ -383,6 +402,10 @@ static int do_dump(const json_t *json, unsigned long flags, int depth,
 
             object->visited = 0;
             return dump("}", 1, data);
+
+        object_error:
+            object->visited = 0;
+            return -1;
         }
 
         default:

@@ -1,5 +1,5 @@
 AC_PREREQ([2.60])
-AC_INIT([jansson], [1.2.1], [petri@digip.org])
+AC_INIT([jansson], [1.3], [petri@digip.org])
 
 AM_INIT_AUTOMAKE([1.10 foreign])
 
@@ -8,6 +8,7 @@ AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_LIBTOOL
 
 # Checks for libraries.

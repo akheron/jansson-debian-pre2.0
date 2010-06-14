@@ -34,8 +34,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 check_PROGRAMS = test_array$(EXEEXT) test_equal$(EXEEXT) \
-	test_copy$(EXEEXT) test_load$(EXEEXT) test_simple$(EXEEXT) \
-	test_number$(EXEEXT) test_object$(EXEEXT)
+	test_copy$(EXEEXT) test_dump$(EXEEXT) test_load$(EXEEXT) \
+	test_simple$(EXEEXT) test_number$(EXEEXT) test_object$(EXEEXT)
 subdir = test/suites/api
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -54,6 +54,10 @@ am_test_copy_OBJECTS = test_copy.$(OBJEXT)
 test_copy_OBJECTS = $(am_test_copy_OBJECTS)
 test_copy_LDADD = $(LDADD)
 test_copy_DEPENDENCIES = $(top_builddir)/src/libjansson.la
+am_test_dump_OBJECTS = test_dump.$(OBJEXT)
+test_dump_OBJECTS = $(am_test_dump_OBJECTS)
+test_dump_LDADD = $(LDADD)
+test_dump_DEPENDENCIES = $(top_builddir)/src/libjansson.la
 test_equal_SOURCES = test_equal.c
 test_equal_OBJECTS = test_equal.$(OBJEXT)
 test_equal_LDADD = $(LDADD)
@@ -87,12 +91,14 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(test_array_SOURCES) $(test_copy_SOURCES) test_equal.c \
-	$(test_load_SOURCES) $(test_number_SOURCES) \
-	$(test_object_SOURCES) $(test_simple_SOURCES)
-DIST_SOURCES = $(test_array_SOURCES) $(test_copy_SOURCES) test_equal.c \
-	$(test_load_SOURCES) $(test_number_SOURCES) \
-	$(test_object_SOURCES) $(test_simple_SOURCES)
+SOURCES = $(test_array_SOURCES) $(test_copy_SOURCES) \
+	$(test_dump_SOURCES) test_equal.c $(test_load_SOURCES) \
+	$(test_number_SOURCES) $(test_object_SOURCES) \
+	$(test_simple_SOURCES)
+DIST_SOURCES = $(test_array_SOURCES) $(test_copy_SOURCES) \
+	$(test_dump_SOURCES) test_equal.c $(test_load_SOURCES) \
+	$(test_number_SOURCES) $(test_object_SOURCES) \
+	$(test_simple_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -108,6 +114,10 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+CXXDEPMODE = @CXXDEPMODE@
+CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -160,6 +170,7 @@ abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
 ac_ct_CC = @ac_ct_CC@
+ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
@@ -211,6 +222,7 @@ top_srcdir = @top_srcdir@
 EXTRA_DIST = run
 test_array_SOURCES = test_array.c util.h
 test_copy_SOURCES = test_copy.c util.h
+test_dump_SOURCES = test_dump.c util.h
 test_load_SOURCES = test_load.c util.h
 test_simple_SOURCES = test_simple.c util.h
 test_number_SOURCES = test_number.c util.h
@@ -267,6 +279,9 @@ test_array$(EXEEXT): $(test_array_OBJECTS) $(test_array_DEPENDENCIES)
 test_copy$(EXEEXT): $(test_copy_OBJECTS) $(test_copy_DEPENDENCIES) 
 	@rm -f test_copy$(EXEEXT)
 	$(LINK) $(test_copy_OBJECTS) $(test_copy_LDADD) $(LIBS)
+test_dump$(EXEEXT): $(test_dump_OBJECTS) $(test_dump_DEPENDENCIES) 
+	@rm -f test_dump$(EXEEXT)
+	$(LINK) $(test_dump_OBJECTS) $(test_dump_LDADD) $(LIBS)
 test_equal$(EXEEXT): $(test_equal_OBJECTS) $(test_equal_DEPENDENCIES) 
 	@rm -f test_equal$(EXEEXT)
 	$(LINK) $(test_equal_OBJECTS) $(test_equal_LDADD) $(LIBS)
@@ -291,6 +306,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_array.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_copy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_dump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_equal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_number.Po@am__quote@
