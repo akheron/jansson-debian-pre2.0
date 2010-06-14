@@ -11,9 +11,9 @@ libjansson.so.0 libjansson0 #MINVER#
  json_copy@Base 1.2
  json_deep_copy@Base 1.2
  json_delete@Base 1.2
- json_dump_file@Base 1.2
- json_dumpf@Base 1.2
- json_dumps@Base 1.2
+ json_dump_file@Base 1.3
+ json_dumpf@Base 1.3
+ json_dumps@Base 1.3
  json_equal@Base 1.2
  json_false@Base 1.2
  json_integer@Base 1.2
@@ -29,8 +29,10 @@ libjansson.so.0 libjansson0 #MINVER#
  json_object_del@Base 1.2
  json_object_get@Base 1.2
  json_object_iter@Base 1.2
+ json_object_iter_at@Base 1.3
  json_object_iter_key@Base 1.2
  json_object_iter_next@Base 1.2
+ json_object_iter_set_new@Base 1.3
  json_object_iter_value@Base 1.2
  json_object_set_new@Base 1.2
  json_object_set_new_nocheck@Base 1.2
