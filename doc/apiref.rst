@@ -154,9 +154,31 @@ Normally, all functions accepting a JSON value as an argument will
 manage the reference, i.e. increase and decrease the reference count
 as needed. However, some functions **steal** the reference, i.e. they
 have the same result as if the user called :cfunc:`json_decref()` on
-the argument right after calling the function. These are usually
-convenience functions for adding new references to containers and not
-to worry about the reference count.
+the argument right after calling the function. These functions are
+suffixed with ``_new`` or have ``_new_`` somewhere in their name.
+
+For example, the following code creates a new JSON array and appends
+an integer to it::
+
+  json_t *array, *integer;
+
+  array = json_array();
+  integer = json_integer(42);
+
+  json_array_append(array, integer);
+  json_decref(integer);
+
+Note how the caller has to release the reference to the integer value
+by calling :cfunc:`json_decref()`. By using a reference stealing
+function :cfunc:`json_array_append_new()` instead of
+:cfunc:`json_array_append()`, the code becomes much simpler::
+
+  json_t *array = json_array();
+  json_array_append_new(array, json_integer(42));
+
+In this case, the user doesn't have to explicitly release the
+reference to the integer value, as :cfunc:`json_array_append_new()`
+steals the reference when appending the value to the array.
 
 In the following sections it is clearly documented whether a function
 will return a new or borrowed reference or steal a reference to its
@@ -493,6 +515,16 @@ The following functions implement an iteration protocol for objects:
    Returns an opaque iterator which can be used to iterate over all
    key-value pairs in *object*, or *NULL* if *object* is empty.
 
+.. cfunction:: void *json_object_iter_at(json_t *object, const char *key)
+
+   Like :cfunc:`json_object_iter()`, but returns an iterator to the
+   key-value pair in *object* whose key is equal to *key*, or NULL if
+   *key* is not found in *object*. Iterating forward to the end of
+   *object* only yields all key-value pairs of the object if *key*
+   happens to be the first key in the underlying hash table.
+
+   .. versionadded:: 1.3
+
 .. cfunction:: void *json_object_iter_next(json_t *object, void *iter)
 
    Returns an iterator pointing to the next key-value pair in *object*
@@ -508,6 +540,21 @@ The following functions implement an iteration protocol for objects:
    .. refcounting:: borrow
 
    Extract the associated value from *iter*.
+
+.. cfunction:: int json_object_iter_set(json_t *object, void *iter, json_t *value)
+
+   Set the value of the key-value pair in *object*, that is pointed to
+   by *iter*, to *value*.
+
+   .. versionadded:: 1.3
+
+.. cfunction:: int json_object_iter_set_new(json_t *object, void *iter, json_t *value)
+
+   Like :cfunc:`json_object_iter_set()`, but steals the reference to
+   *value*. This is useful when *value* is newly created and not used
+   after the call.
+
+   .. versionadded:: 1.3
 
 The iteration protocol can be used for example as follows::
 
@@ -569,6 +616,14 @@ can be ORed together to obtain *flags*.
    compared.
 
    .. versionadded:: 1.2
+
+``JSON_PRESERVE_ORDER``
+   If this flag is used, object keys in the output are sorted into the
+   same order in which they were first inserted to the object. For
+   example, decoding a JSON text and then encoding with this flag
+   preserves the order of object keys.
+
+   .. versionadded:: 1.3
 
 The following functions perform the actual JSON encoding. The result
 is in UTF-8.

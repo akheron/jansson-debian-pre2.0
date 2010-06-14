@@ -88,9 +88,11 @@ int json_object_del(json_t *object, const char *key);
 int json_object_clear(json_t *object);
 int json_object_update(json_t *object, json_t *other);
 void *json_object_iter(json_t *object);
+void *json_object_iter_at(json_t *object, const char *key);
 void *json_object_iter_next(json_t *object, void *iter);
 const char *json_object_iter_key(void *iter);
 json_t *json_object_iter_value(void *iter);
+int json_object_iter_set_new(json_t *object, void *iter, json_t *value);
 
 static JSON_INLINE
 int json_object_set(json_t *object, const char *key, json_t *value)
@@ -102,6 +104,12 @@ static JSON_INLINE
 int json_object_set_nocheck(json_t *object, const char *key, json_t *value)
 {
     return json_object_set_new_nocheck(object, key, json_incref(value));
+}
+
+static inline
+int json_object_iter_set(json_t *object, void *iter, json_t *value)
+{
+    return json_object_iter_set_new(object, iter, json_incref(value));
 }
 
 unsigned int json_array_size(const json_t *array);
@@ -170,6 +178,7 @@ json_t *json_load_file(const char *path, json_error_t *error);
 #define JSON_COMPACT        0x100
 #define JSON_ENSURE_ASCII   0x200
 #define JSON_SORT_KEYS      0x400
+#define JSON_PRESERVE_ORDER 0x800
 
 char *json_dumps(const json_t *json, unsigned long flags);
 int json_dumpf(const json_t *json, FILE *output, unsigned long flags);
